@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+
+  # backend:
+  #   build: .
+  #   command: npm run dev
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #   ports:
+  #     - '3000:3000'
+  #   environment:
+  #     PGUSER: postgres
+  #     PGHOST: db
+  #     PGDATABASE: testdb
+  #     PGPASSWORD: password
+  #     PGPORT: 5432
+  #   depends_on:
+  #     - db
+
+volumes:
+  db_data: 
