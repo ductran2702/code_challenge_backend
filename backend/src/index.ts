@@ -92,6 +92,16 @@ app.get('/health', (req, res) => {
  *           type: string
  *           description: The description of the item
  *           example: "This is a sample item description"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: The timestamp when the item was created
+ *           example: "2024-01-15T10:30:00.000Z"
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: The timestamp when the item was last updated
+ *           example: "2024-01-15T10:30:00.000Z"
  *     ItemInput:
  *       type: object
  *       required:
