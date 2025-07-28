@@ -152,7 +152,6 @@ app.post('/items', async (req, res) => {
         description: description || null,
       },
     });
-    console.log("🚀 ~ item:", item)
     res.status(201).json(item);
   } catch (err: any) {
     console.log("Failed to create item:", err)
@@ -240,6 +239,7 @@ app.get('/items/:id', async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Item not found' });
     res.json(item);
   } catch (err: any) {
+    console.log("Failed to fetch item:", err)
     res.status(500).json({ error: 'Failed to fetch item', details: err });
   }
 });
@@ -293,6 +293,7 @@ app.put('/items/:id', async (req, res) => {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Item not found' });
     }
+    console.log("Failed to update item:", err)
     res.status(500).json({ error: 'Failed to update item', details: err });
   }
 });
@@ -341,6 +342,7 @@ app.delete('/items/:id', async (req, res) => {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Item not found' });
     }
+    console.log("Failed to delete item:", err)
     res.status(500).json({ error: 'Failed to delete item', details: err });
   }
 });
