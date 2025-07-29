@@ -1,19 +1,11 @@
-import express, { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import cors from 'cors';
-import {
-  CreateItemRequest,
-  UpdateItemRequest,
-  ItemResponse,
-  DeleteItemResponse,
-  ErrorResponse
-} from './interfaces';
+import { ItemController, HealthController } from './controllers';
 
 const app = express();
 const port = process.env.PORT || 3000;
-const prisma = new PrismaClient();
 
 // CORS configuration
 app.use(cors({
@@ -74,9 +66,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *                   type: string
  *                   example: "ok"
  */
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
+app.get('/health', HealthController.healthCheck);
 
 /**
  * @swagger
@@ -149,22 +139,7 @@ app.get('/health', (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.post('/items', async (req: Request<{}, {}, CreateItemRequest>, res: Response<ItemResponse | ErrorResponse>) => {
-  const { name, description } = req.body;
-  if (!name) return res.status(400).json({ error: 'Name is required' });
-  try {
-    const item = await prisma.item.create({
-      data: {
-        name,
-        description: description || null,
-      },
-    });
-    res.status(201).json(item);
-  } catch (err: any) {
-    console.log("Failed to create item:", err)
-    res.status(500).json({ error: 'Failed to create item', details: err });
-  }
-});
+app.post('/items', ItemController.createItem);
 
 /**
  * @swagger
@@ -192,23 +167,7 @@ app.post('/items', async (req: Request<{}, {}, CreateItemRequest>, res: Response
  *       500:
  *         description: Internal server error
  */
-app.get('/items', async (req: Request<{}, {}, {}, { name?: string }>, res: Response<ItemResponse[] | ErrorResponse>) => {
-  const { name } = req.query;
-  try {
-    const items = await prisma.item.findMany({
-      where: name ? {
-        name: {
-          contains: name,
-          mode: 'insensitive',
-        },
-      } : undefined,
-    });
-    res.json(items);
-  } catch (err: any) {
-    console.log("Failed to fetch items:", err);
-    res.status(500).json({ error: 'Failed to fetch items', details: err });
-  }
-});
+app.get('/items', ItemController.getItems);
 
 /**
  * @swagger
@@ -237,19 +196,7 @@ app.get('/items', async (req: Request<{}, {}, {}, { name?: string }>, res: Respo
  *       500:
  *         description: Internal server error
  */
-app.get('/items/:id', async (req: Request<{ id: string }>, res: Response<ItemResponse | ErrorResponse>) => {
-  const { id } = req.params;
-  try {
-    const item = await prisma.item.findUnique({
-      where: { id: parseInt(id) },
-    });
-    if (!item) return res.status(404).json({ error: 'Item not found' });
-    res.json(item);
-  } catch (err: any) {
-    console.log("Failed to fetch item:", err)
-    res.status(500).json({ error: 'Failed to fetch item', details: err });
-  }
-});
+app.get('/items/:id', ItemController.getItemById);
 
 /**
  * @swagger
@@ -284,26 +231,7 @@ app.get('/items/:id', async (req: Request<{ id: string }>, res: Response<ItemRes
  *       500:
  *         description: Internal server error
  */
-app.put('/items/:id', async (req: Request<{ id: string }, {}, UpdateItemRequest>, res: Response<ItemResponse | ErrorResponse>) => {
-  const { id } = req.params;
-  const { name, description } = req.body;
-  try {
-    const item = await prisma.item.update({
-      where: { id: parseInt(id) },
-      data: {
-        name,
-        description: description || null,
-      },
-    });
-    res.json(item);
-  } catch (err: any) {
-    if (err.code === 'P2025') {
-      return res.status(404).json({ error: 'Item not found' });
-    }
-    console.log("Failed to update item:", err)
-    res.status(500).json({ error: 'Failed to update item', details: err });
-  }
-});
+app.put('/items/:id', ItemController.updateItem);
 
 /**
  * @swagger
@@ -338,21 +266,7 @@ app.put('/items/:id', async (req: Request<{ id: string }, {}, UpdateItemRequest>
  *       500:
  *         description: Internal server error
  */
-app.delete('/items/:id', async (req: Request<{ id: string }>, res: Response<DeleteItemResponse | ErrorResponse>) => {
-  const { id } = req.params;
-  try {
-    const item = await prisma.item.delete({
-      where: { id: parseInt(id) },
-    });
-    res.json({ message: 'Item deleted', item });
-  } catch (err: any) {
-    if (err.code === 'P2025') {
-      return res.status(404).json({ error: 'Item not found' });
-    }
-    console.log("Failed to delete item:", err)
-    res.status(500).json({ error: 'Failed to delete item', details: err });
-  }
-});
+app.delete('/items/:id', ItemController.deleteItem);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
