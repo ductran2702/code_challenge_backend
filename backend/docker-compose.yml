@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   db:
     image: postgres:15
@@ -7,26 +9,45 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - '5432:5432'
+      - '5433:5432'  # Use 5433 instead of 5432
     volumes:
-      - ./db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
 
-  # backend:
-  #   build: .
-  #   command: npm run dev
-  #   volumes:
-  #     - .:/app
-  #     - /app/node_modules
-  #   ports:
-  #     - '3000:3000'
-  #   environment:
-  #     PGUSER: postgres
-  #     PGHOST: db
-  #     PGDATABASE: testdb
-  #     PGPASSWORD: password
-  #     PGPORT: 5432
-  #   depends_on:
-  #     - db
+  backend:
+    build: .
+    restart: unless-stopped
+    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npm run dev"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: "postgresql://postgres:password@db:5432/testdb"
+      PORT: 3000
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
 
 volumes:
-  db_data: 
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge 
