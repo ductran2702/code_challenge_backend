@@ -32,6 +32,9 @@ export class ItemService {
           mode: 'insensitive',
         },
       } : undefined,
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
   }
 
