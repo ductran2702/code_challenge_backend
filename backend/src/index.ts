@@ -1,8 +1,15 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import cors from 'cors';
+import {
+  CreateItemRequest,
+  UpdateItemRequest,
+  ItemResponse,
+  DeleteItemResponse,
+  ErrorResponse
+} from './interfaces';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -142,7 +149,7 @@ app.get('/health', (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.post('/items', async (req, res) => {
+app.post('/items', async (req: Request<{}, {}, CreateItemRequest>, res: Response<ItemResponse | ErrorResponse>) => {
   const { name, description } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required' });
   try {
@@ -185,13 +192,13 @@ app.post('/items', async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.get('/items', async (req, res) => {
+app.get('/items', async (req: Request<{}, {}, {}, { name?: string }>, res: Response<ItemResponse[] | ErrorResponse>) => {
   const { name } = req.query;
   try {
     const items = await prisma.item.findMany({
       where: name ? {
         name: {
-          contains: name as string,
+          contains: name,
           mode: 'insensitive',
         },
       } : undefined,
@@ -230,7 +237,7 @@ app.get('/items', async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.get('/items/:id', async (req, res) => {
+app.get('/items/:id', async (req: Request<{ id: string }>, res: Response<ItemResponse | ErrorResponse>) => {
   const { id } = req.params;
   try {
     const item = await prisma.item.findUnique({
@@ -277,7 +284,7 @@ app.get('/items/:id', async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.put('/items/:id', async (req, res) => {
+app.put('/items/:id', async (req: Request<{ id: string }, {}, UpdateItemRequest>, res: Response<ItemResponse | ErrorResponse>) => {
   const { id } = req.params;
   const { name, description } = req.body;
   try {
@@ -331,7 +338,7 @@ app.put('/items/:id', async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.delete('/items/:id', async (req, res) => {
+app.delete('/items/:id', async (req: Request<{ id: string }>, res: Response<DeleteItemResponse | ErrorResponse>) => {
   const { id } = req.params;
   try {
     const item = await prisma.item.delete({
