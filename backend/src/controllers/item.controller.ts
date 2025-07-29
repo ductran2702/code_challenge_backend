@@ -14,7 +14,6 @@ export class ItemController {
    */
   static async createItem(req: Request<{}, {}, CreateItemRequest>, res: Response<ItemResponse | ErrorResponse>) {
     const { name, description } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
     
     try {
       const item = await ItemService.createItem({ name, description });

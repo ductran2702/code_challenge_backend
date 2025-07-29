@@ -3,6 +3,13 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import cors from 'cors';
 import { ItemController, HealthController } from './controllers';
+import { validateRequest } from './middleware/validation.middleware';
+import {
+  createItemSchema,
+  updateItemSchema,
+  itemIdSchema,
+  itemQuerySchema
+} from './validations/item.validation';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -135,11 +142,11 @@ app.get('/health', HealthController.healthCheck);
  *             schema:
  *               $ref: '#/components/schemas/Item'
  *       400:
- *         description: Bad request - name is required
+ *         description: Bad request - validation failed
  *       500:
  *         description: Internal server error
  */
-app.post('/items', ItemController.createItem);
+app.post('/items', validateRequest({ body: createItemSchema }), ItemController.createItem);
 
 /**
  * @swagger
@@ -164,10 +171,12 @@ app.post('/items', ItemController.createItem);
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Item'
+ *       400:
+ *         description: Bad request - validation failed
  *       500:
  *         description: Internal server error
  */
-app.get('/items', ItemController.getItems);
+app.get('/items', validateRequest({ query: itemQuerySchema }), ItemController.getItems);
 
 /**
  * @swagger
@@ -191,12 +200,14 @@ app.get('/items', ItemController.getItems);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Item'
+ *       400:
+ *         description: Bad request - validation failed
  *       404:
  *         description: Item not found
  *       500:
  *         description: Internal server error
  */
-app.get('/items/:id', ItemController.getItemById);
+app.get('/items/:id', validateRequest({ params: itemIdSchema }), ItemController.getItemById);
 
 /**
  * @swagger
@@ -226,12 +237,14 @@ app.get('/items/:id', ItemController.getItemById);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Item'
+ *       400:
+ *         description: Bad request - validation failed
  *       404:
  *         description: Item not found
  *       500:
  *         description: Internal server error
  */
-app.put('/items/:id', ItemController.updateItem);
+app.put('/items/:id', validateRequest({ params: itemIdSchema, body: updateItemSchema }), ItemController.updateItem);
 
 /**
  * @swagger
@@ -261,12 +274,14 @@ app.put('/items/:id', ItemController.updateItem);
  *                   example: "Item deleted"
  *                 item:
  *                   $ref: '#/components/schemas/Item'
+ *       400:
+ *         description: Bad request - validation failed
  *       404:
  *         description: Item not found
  *       500:
  *         description: Internal server error
  */
-app.delete('/items/:id', ItemController.deleteItem);
+app.delete('/items/:id', validateRequest({ params: itemIdSchema }), ItemController.deleteItem);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
