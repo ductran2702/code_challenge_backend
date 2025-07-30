@@ -94,17 +94,21 @@ sequenceDiagram
 - **Monitoring**: Real-time performance metrics (Score update latency, Suspicious activity alerts)
 
 ## API Endpoint: POST /score/update
+
 Headers:
 Authorization: Bearer <JWT>
 
 Body:
+
 {
-  "actionId": "abc123",
+  "actionType": "abc123",
   "metadata": { ... }
 }
 
 ## WebSocket Channel: /ws/leaderboard
+
 Payload Example:
+
 {
   "event": "leaderboard:update",
   "data": [
@@ -122,6 +126,7 @@ Validate JWTs for every score update request.
 Respond with claims (user ID, expiration, role).
 
 **Interface**
+
 function validateToken(token: string): {
   userId: string;
   role: string;
@@ -134,6 +139,7 @@ Validate that the user's action is allowed and legitimate (based on business/gam
 Reject requests with malformed actions, invalid state transitions, or tampering attempts.
 
 **Input Example**
+
 {
   "userId": "user-123",
   "actionType": "abc-789",
@@ -144,6 +150,7 @@ Reject requests with malformed actions, invalid state transitions, or tampering 
 }
 
 **Interface**
+
 function validateGameAction(userId: string, action: Action): {
   isValid: boolean;
   reason?: string;
@@ -163,6 +170,7 @@ Stores persistent user scores.
 Supports queries like: SELECT * FROM users ORDER BY score DESC LIMIT 10.
 
 **Schema**
+
 CREATE TABLE users (
   id UUID PRIMARY KEY,
   username VARCHAR NOT NULL,
@@ -177,7 +185,9 @@ Maintains the leaderboard in memory for fast access.
 Uses TTLs and/or versioning to handle invalidation.
 
 **Use a Redis Sorted Set for the leaderboard:**
+
 ZADD leaderboard <score> <userId>
+
 ZREVRANGE leaderboard 0 9 WITHSCORES
 
 ### WebSocket Service
@@ -188,6 +198,7 @@ Pushes updated leaderboard when notified.
 Secured by token/session validation on connection.
 
 **Payload**
+
 {
   "event": "leaderboard:update",
   "data": [
