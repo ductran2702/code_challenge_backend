@@ -1,6 +1,6 @@
 # Leaderboard API Service - Flow Diagram
 
-## Term definition:
+### Term definition:
 
 **Scoreboard**: The whole score board of all users.
 
@@ -8,16 +8,14 @@
 
 ```mermaid
 sequenceDiagram
-    title Live Leaderboard Update Flow
+    title Update score flow
 
     participant User
     participant WebBrowser as Web Browser
     participant AppServer as Application Server
-    participant AuthService as Authentication Service
     participant GameService as Authorization and Game logic Service
     participant DB as Database
     participant Redis as Redis Layer
-    participant WebSocket as WebSocket Service
 
     %% User performs action
     User->>WebBrowser: Perform action
@@ -27,11 +25,9 @@ sequenceDiagram
     activate WebBrowser
 
     %% App Server validates JWT
-    AppServer->>AuthService: Validate JWT access_token
+    AppServer->>AppServer: Validate JWT access_token
 
     alt JWT valid
-        AuthService->>AppServer: Token valid
-
         AppServer->>GameService: Validate Authorization and Game logic for this user's action
 
         alt Authorization and Game logic valid
@@ -43,33 +39,46 @@ sequenceDiagram
             AppServer-->>WebBrowser: Score update result  
 
             AppServer-->>Redis: Update user score
-            AppServer->>Redis: Get leaderboard
-            alt Cache hit
-                Redis->>AppServer: leaderboard users updated
-            else Fallback to DB if cache missed
-                AppServer->>DB: Get scoreboard
-                DB->>AppServer: Scoreboard updated
-                AppServer->>Redis: Update scoreboard
-                AppServer->>Redis: Get leaderboard
-                Redis->>AppServer: leaderboard users updated
-            end
-            loop every second
-                alt Leaderboard update is needed since last loop's iterator
-                    alt Leaderboard update needed
-                        AppServer->>WebSocket: Broadcast new leaderboard
-                        WebSocket-->>WebBrowser: Broadcast new leaderboard to browser
-                    end
-                end
-            end
         else Action invalid
             GameService->>AppServer: Authorization and Game logic invalid
             AppServer-->>WebBrowser: Action not authorized (score not updated)
         end
     else JWT invalid
-        AuthService->>AppServer: Token invalid
         AppServer-->>WebBrowser: Invalid token (score not updated)
     end
     deactivate WebBrowser
+```
+
+### Real-time Leaderboard Update Flow:
+
+```mermaid
+sequenceDiagram
+    title Real-time Leaderboard Update Flow
+
+    participant WebBrowser as Web Browser
+    participant WebSocket as WebSocket Service
+    participant DB as Database
+    participant Redis as Redis Layer
+
+    WebBrowser->>WebSocket: Connect with auth token
+    WebSocket->>WebSocket: Authenticate client
+    WebSocket-->>WebBrowser: Connection established
+
+    loop every second
+        WebSocket->>Redis: Get leaderboard
+        alt Cache hit
+            Redis->>WebSocket: Leaderboard users updated
+        else Fallback to DB if cache missed
+            WebSocket->>DB: Get scoreboard
+            DB->>WebSocket: Scoreboard updated
+            WebSocket->>Redis: Update scoreboard
+            WebSocket->>Redis: Get leaderboard
+            Redis->>WebSocket: Leaderboard users updated
+        end
+        alt Leaderboard has been updated since last loop's iterator
+            WebSocket-->>WebBrowser: Broadcast new leaderboard to browser
+        end
+    end
 ```
 
 ## Key Flow Characteristics
@@ -118,8 +127,8 @@ Payload Example:
 {
   "event": "leaderboard:update",
   "data": [
-    { "userId": "u1", "score": 100 },
-    { "userId": "u2", "score": 95 },
+    { "userId": "u1", "userName": "Fred", "score": 100 },
+    { "userId": "u2", "userName": "John", "score": 95 },
     ...
   ]
 }
