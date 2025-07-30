@@ -1,5 +1,11 @@
 # Leaderboard API Service - Flow Diagram
 
+## Term definition:
+
+**Scoreboard**: The whole score board of all users.
+
+**Leaderboard**: The score board of top 10 users.
+
 ```mermaid
 sequenceDiagram
     title Live Leaderboard Update Flow
