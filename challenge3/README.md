@@ -134,7 +134,8 @@ Payload Example:
 }
 
 ## Modules & Responsibilities
-### Authentication Service
+
+### 1. Authentication Service
 
 Validate JWTs for every score update request.
 
@@ -148,7 +149,8 @@ function validateToken(token: string): {
   exp: number;
 } | null
 
-### GameService
+### 2. GameService
+
 Validate that the user's action is allowed and legitimate (based on business/game logic).
 
 Reject requests with malformed actions, invalid state transitions, or tampering attempts.
@@ -172,14 +174,16 @@ function validateGameAction(userId: string, action: Action): {
   pointsAwarded?: number;
 }
 
-### ScoreService
+### 3. ScoreService
+
 Increment the user's score in the database.
 
 After score change, re-evaluate top 10 scores.
 
 If top 10 changed, update Redis cache and broadcast.
 
-### Database
+### 4. Database
+
 Stores persistent user scores.
 
 Supports queries like: SELECT * FROM users ORDER BY score DESC LIMIT 10.
@@ -194,7 +198,8 @@ CREATE TABLE users (
 );
 CREATE INDEX idx_score_desc ON users (score DESC);
 
-### Cache Layer (e.g., Redis)
+### 5. Cache Layer (e.g., Redis)
+
 Maintains the leaderboard in memory for fast access.
 
 Uses TTLs and/or versioning to handle invalidation.
@@ -205,7 +210,8 @@ ZADD leaderboard <score> <userId>
 
 ZREVRANGE leaderboard 0 9 WITHSCORES
 
-### WebSocket Service
+### 6. WebSocket Service
+
 Maintains WebSocket connections with clients.
 
 Pushes updated leaderboard when notified.
@@ -230,6 +236,7 @@ HTTP/REST between services (synchronous, easier to debug)
 gRPC or message queues (Kafka/NATS/RabbitMQ) for scalability
 
 ## Testing and Monitoring Suggestions
+
 | Component    | Metric/Log |
 | -------- | ------- |
 | Auth Service  | Token validation failure count    |
